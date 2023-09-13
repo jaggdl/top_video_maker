@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 
 export function createProjectDirectories(projectName) {
-  const baseDir = './outputs';
+  const baseDir = './.outputs';
   const projectDir = path.join(baseDir, projectName);
   const subDirs = ['audio', 'images', 'videos'];
 

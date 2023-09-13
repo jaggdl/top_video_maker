@@ -1,10 +1,10 @@
 import sys
 from diffusers import DiffusionPipeline
-import torch
 
 def generate_image(prompt, output_path):
     pipe = DiffusionPipeline.from_pretrained("stabilityai/stable-diffusion-xl-base-1.0", use_safetensors=True)
-    pipe.to("cpu")
+    pipe.to("mps")
+    pipe.enable_attention_slicing()
     image = pipe(prompt=prompt).images[0]
     image.save(output_path)
 
