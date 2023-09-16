@@ -18,14 +18,10 @@ async function getVideoInfo(subject, listLength) {
           type: "string",
           description: 'The title of the video'
         },
-        // "visual_style": {
-        //   type: "string",
-        //   description: 'The style in that the images in the video.'  
-        // },
-        // "narration_mood": {
-        //   type: "string",
-        //   description: 'The mood that the narration of the video'  
-        // },
+        "visual_style": {
+          type: "string",
+          description: 'Suggest the visual style in English for the images in the video'  
+        },
         "description": {
           type: "string",
           description: 'The description of the video on Youtube'
@@ -45,6 +41,13 @@ async function getVideoInfo(subject, listLength) {
           },
         },
       },
+      "required": [
+        'title',
+        'description',
+        'items',
+        'hashtags',
+        'visual_style',
+      ]
     },
   }];
 
@@ -55,7 +58,7 @@ async function getVideoInfo(subject, listLength) {
     ],
     model: 'gpt-4-0613',
     functions,
-    function_call: 'auto'
+    function_call: {"name": "make_top_list_video"}
   });
 
   const functionArgs = JSON.parse(completion.choices[0].message.function_call.arguments)
@@ -79,16 +82,42 @@ async function getBody(title, subject, posisition, listLength) {
   return completion.choices[0].message.content;
 }
 
-async function getImagePrompt(text, listTitle) {
+async function getImagePrompt(text, listTitle, style) {
+  const numberOfPrompts = 1;
+  const functions = [{
+    name: 'make_images',
+    description: `Your role is to write a ${numberOfPrompts} prompts for a text-to-image model. Each prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}". The style of the image should be ${style}`,
+    "parameters": {
+      "type": "object",
+      "properties": {
+        "prompts": {
+          "type": "array",
+          "description": `The prompt`,
+          "items": {
+            "type": "string"
+          },
+        },
+      },
+    },
+  }];
+
   const completion = await openai.chat.completions.create({
     messages: [
-      { role: 'user', content: `Your role is to write prompts for a text-to-image model. The prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}".` },
+      { role: 'user', content: `Your role is to write a single prompt for a text-to-image model. The prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}". The style of the image should be ${style}` },
       CONTEXT_MESSAGE
     ],
     model: 'gpt-4-0613',
+    functions,
+    function_call: {"name": "make_images"}
   });
 
-  return completion.choices[0].message.content;
+  const functionArgs = JSON.parse(completion.choices[0].message.function_call.arguments)
+
+  if (functionArgs.prompts.length > numberOfPrompts) {
+    functionArgs.prompts.length = numberOfPrompts;
+  }
+
+  return functionArgs.prompts;
 }
 
 export {

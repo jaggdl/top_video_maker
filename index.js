@@ -13,11 +13,13 @@ import {
 } from './textGenerator.js';
 import { generateAudio } from './generateAudio.js';
 import { generateImage } from './generateImage.js';
-import { mergeMedia, mergeVideos, addVoiceOver } from './ffmpegMerger.js';
+import { mergeAudioFiles } from './mergeAudioFiles.js';
+import getVideoDuration from './videoDuration.js';
+import { mergeMedia, mergeVideos, addVoiceOver, mergeAudioAndImages } from './ffmpegMerger.js';
 import { uploadVideo } from './uploadVideo.js';
 
-const TOP_LIST_TITLE = 'Ciudades de México más felices';
-const TOP_LIST_LENGTH = 3;
+const TOP_LIST_TITLE = 'Ciudades costeras más chill de México 🤙';
+const TOP_LIST_LENGTH = 5;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 
 createProjectDirectories(TOP_LIST_TITLE);
@@ -25,109 +27,175 @@ createProjectDirectories(TOP_LIST_TITLE);
 class Video {
   constructor(subject, listLength) {
     this.subject = subject;
-    this.listLength = listLength
-
+    this.listLength = listLength;
     this.title = null;
     this.description = null;
     this.items = null;
     this.hashtags = null;
+    this.visualStyle = null;
+
+    const videoRecord = this.readJSONFileSync(this.recordPath);
+
+    if (videoRecord) {
+      this.title = videoRecord.title;
+      this.description = videoRecord.description;
+      this.items = videoRecord.items.map(itemRecord => new Item(itemRecord));
+      this.hashtags = videoRecord.hashtags;
+      this.visualStyle = videoRecord.visualStyle;
+    }
+  }
+
+  get recordPath() {
+    const outputDirectory = path.join(__dirname, `${PROJECT_PATH}`);
+    return path.join(outputDirectory, 'record.json');
+  }
+
+  readJSONFileSync(filePath) {
+    try {
+      const fileContent = fs.readFileSync(filePath, 'utf8');
+      return JSON.parse(fileContent);
+    } catch (err) {
+      console.error(`Error reading or parsing file: ${err}`);
+      return null;
+    }
   }
 
   async generateStructure() {
-    const {title, description, items, hashtags} = await getVideoInfo(this.subject, this.listLength);
+    if (this.items) {
+      return;
+    }
+
+    const {title, description, items, hashtags, visual_style} = await getVideoInfo(this.subject, this.listLength);
     this.title = title;
     this.description = description;
     this.hashtags = hashtags;
-    this.items = items.map(itemTitle => new Item(itemTitle));
+    this.visualStyle = visual_style;
+    this.items = items.map(itemTitle => new Item({title: itemTitle}));
+    this.updateRecord();
   }
 
   async generateNarrationAudio() {
     await Promise.all(this.items.map(async (itemInstance, index) => {
       await itemInstance.generateNarrationText(index);
-      
-      console.log(`🔊 Generating audio for "${itemInstance.narratorText}"`);
+      this.updateRecord();
       await itemInstance.generateNarrationAudios();
-      
-      return itemInstance;
+    
+      this.updateRecord();
     }));
   }
 
   async generateItemsImages() {
     for (let item of this.items) {
-      await item.generateImages();
+      await item.generateImages(this.visualStyle);
+      this.updateRecord();
     }
   }
 
   async createItemsVideos() {
     await Promise.all(this.items.map(item => item.generateVideo()));
+    this.updateRecord();
   }
 
   updateRecord() {
-    const outputDirectory = path.join(__dirname, `${PROJECT_PATH}`);
-    const filePath = path.join(outputDirectory, 'record.json');
-    fs.writeFile(filePath, JSON.stringify(this, null, 2), (err) => {
-        if (err) {
-            console.error(`Error writing file: ${err}`);
-        } else {
-            console.log(`File has been written to ${filePath}`);
-        }
-    });
-
+    fs.writeFileSync(this.recordPath, JSON.stringify(this, null, 2));
   }
+
+  getformatedChapters() {
+    let accumulatedTime = 0; // Initialize accumulated time to 0
+    return this.items.map(item => {
+      const minutes = Math.floor(accumulatedTime / 60); // Calculate minutes
+      const seconds = Math.round(accumulatedTime % 60); // Calculate seconds
+      const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; // Format time as MM:SS
+      
+      // Update the accumulated time for the next iteration
+      accumulatedTime += item.duration;
+      
+      return `${formattedTime} - ${item.title}`; // Return the formatted string for this item
+    }).join('\n'); // Join all formatted strings with a newline character
+  }
+  
 }
 
 class Item {
-  constructor(title) {
+  constructor({title, narratorText, audioFiles, audioTrack, images, outputVideo, duration}) {
     this.title = title;
-    this.narratorText = null;
-    this.audioFiles = null;
-    this.images = null;
-    this.outputVideo = null;
+    this.narratorText = narratorText || null;
+    this.audioFiles = audioFiles || null;
+    this.audioTrack = audioTrack || null;
+    this.images = images || null;
+    this.outputVideo = outputVideo || null;
+    this.duration = duration || null;
+  }
+
+  get sanitizedTitle() {
+    return this.title.split(' ').join('_');
   }
 
   async generateNarrationText(index) {
     const numberNames = ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
     const positionName = numberNames[TOP_LIST_LENGTH - index - 1];
 
-    this.narratorText = `Puesto número ${positionName}: ${this.title}.\n\n`;
-    this.narratorText += await getBody(this.title, TOP_LIST_TITLE, positionName, TOP_LIST_LENGTH);
+    if (this.narratorText) {
+      return;
+    }
+
+    const generatedNarration = await getBody(this.title, TOP_LIST_TITLE, positionName, TOP_LIST_LENGTH);
+    this.narratorText = `Puesto número ${positionName}: ${this.title}.\n${generatedNarration}`;
   }
 
   async generateNarrationAudios() {
-    const generateAudioRes = await generateAudio(this.narratorText, `${PROJECT_PATH}/audio`);
-    this.audioFiles = generateAudioRes.audio_files;
+    const audioTrackPath = `${PROJECT_PATH}/audio/track_${this.sanitizedTitle}.wav`;
+
+    if (this.audioFiles && this.audioTrack) {
+      return;
+    }
+
+    if (!this.audioFiles) {
+      console.log(`🔊 Generating audio for "${this.narratorText}"`);
+      const generateAudioRes = await generateAudio(this.narratorText, `${PROJECT_PATH}/audio`);
+      this.audioFiles = generateAudioRes.audio_files;
+    }
+
+    await mergeAudioFiles(this.audioFiles, audioTrackPath);
+    this.audioTrack = audioTrackPath
   }
 
-  async generateImages() {
+  async generateImages(visualStyle) {
+    if (this.images) {
+      return;
+    }
+
     this.images = [];
     const imageOutputPath = `${PROJECT_PATH}/images/${this.title}.png`
     console.log('📝🏞️ Generating prompt for image generation of', this.title);
-    const imagePrompt = await getImagePrompt(this.title, TOP_LIST_TITLE);
-    console.log('🎆 Generating image for', this.title, 'with prompt', imagePrompt);
-    await generateImage(imagePrompt, imageOutputPath);
-    this.images.push(imageOutputPath)
+    const imagePrompts = await getImagePrompt(this.title, TOP_LIST_TITLE, visualStyle);
+    console.log('Image prompts generated:', imagePrompts);
+
+    for (let imgPrompt of imagePrompts) {
+      console.log('🎆 Generating image for', this.title, 'with prompt', imgPrompt);
+      await generateImage(imgPrompt, imageOutputPath);
+      this.images.push(imageOutputPath)
+    }
   }
 
   async generateVideo() {
-    const outputPath = `${PROJECT_PATH}/videos/${this.title.split(' ').join('_')}.mov`
+    const outputPath = `${PROJECT_PATH}/videos/${this.sanitizedTitle}.mp4`
+    await mergeAudioAndImages(this.audioTrack, this.images, this.outputVideo);
+    this.duration = await getVideoDuration(outputPath);
     this.outputVideo = outputPath;
-    await mergeMedia(this.audioFiles, this.images, this.outputVideo);
   }
 }
+
 
 const videoInstance = new Video(TOP_LIST_TITLE, TOP_LIST_LENGTH);
 await videoInstance.generateStructure();
 console.log('📝 Video structure:', videoInstance);
 
-videoInstance.updateRecord();
 await videoInstance.generateNarrationAudio();
-videoInstance.updateRecord();
 await videoInstance.generateItemsImages()
-videoInstance.updateRecord();
 await videoInstance.createItemsVideos();
-videoInstance.updateRecord();
 
-let videoOutputPath = `./.outputs/TOP ${TOP_LIST_LENGTH} ${TOP_LIST_TITLE}.mov`.replaceAll(' ', '_');
+let videoOutputPath = `./.outputs/TOP ${TOP_LIST_LENGTH} ${TOP_LIST_TITLE}.mp4`.replaceAll(' ', '_');
 
 console.log('Merging videos:', videoInstance);
 await mergeVideos(videoInstance.items.map(item => item.outputVideo), videoOutputPath);
@@ -135,6 +203,8 @@ await mergeVideos(videoInstance.items.map(item => item.outputVideo), videoOutput
 
 console.log('📹 Full video generated:', videoOutputPath);
 
-const fullDescription = `${videoInstance.description}\n\n${videoInstance.hashtags.join(' ')}`;
+const fullDescription = `${videoInstance.description}\n\n${videoInstance.hashtags.join(' ')}\n\n${videoInstance.getformatedChapters()}`;
+
+console.log(fullDescription);  
 
 // await uploadVideo(videoOutputPath, videoInstance.title, fullDescription);

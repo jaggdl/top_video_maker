@@ -25,6 +25,61 @@ const resampleAudio = async (inputPath, outputPath) => {
   });
 };
 
+const getAudioDuration = (audioPath) => {
+  return new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(audioPath, (err, metadata) => {
+      if (err) {
+        return reject(err);
+      }
+      const audioDuration = metadata.format.duration;
+      resolve(audioDuration);
+    });
+  });
+};
+
+const mergeAudioAndImages = async (audioPath, imagesArray, outputPath) => {
+  return new Promise(async (resolve, reject) => {
+    let audioDuration;
+    try {
+      audioDuration = await getAudioDuration(audioPath);
+    } catch (err) {
+      return reject(err);
+    }
+
+    const imageDuration = Math.floor(audioDuration / imagesArray.length);
+
+    let ffmpegCmd = ffmpeg();
+    ffmpegCmd = ffmpegCmd.addInput(audioPath)
+                          .audioCodec('aac')
+                          .audioChannels(1)
+                          .audioFrequency(22050);
+
+    imagesArray.forEach((imagePath, index) => {
+      ffmpegCmd = ffmpegCmd.addInput(imagePath).inputOptions([
+        `-t ${imageDuration}`,
+        `-itsoffset ${index * imageDuration}`
+      ]);
+    });
+
+    ffmpegCmd = ffmpegCmd.outputOptions([
+      '-pix_fmt yuv420p', // Set pixel format
+      '-strict experimental'
+    ]).output(outputPath);
+
+    ffmpegCmd
+      .on('end', () => {
+        console.log('Merging completed');
+        resolve();
+      })
+      .on('error', (err) => {
+        console.log('An error occurred:', err.message);
+        reject(err);
+      });
+
+    ffmpegCmd.run();
+  });
+};
+
 
 const mergeMedia = async (audios, images, finalOutputPath) => {
   if (!fs.existsSync(path.dirname(finalOutputPath))) {
@@ -202,4 +257,4 @@ async function addVoiceOver(videoFilePath, audioFilePath) {
 }
 
 
-export { mergeMedia, mergeVideos, addVoiceOver };
+export { mergeMedia, mergeVideos, addVoiceOver, mergeAudioAndImages };
