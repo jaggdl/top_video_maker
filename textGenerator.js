@@ -35,7 +35,7 @@ async function getVideoInfo(subject, listLength) {
         },
         "items": {
           "type": "array",
-          "description": `the top ${listLength} to make the video about starting from lowest ranked (#${listLength}) ending with the highest (#1)`,
+          "description": `the top ${listLength} to make the video about starting from lowest ranked (#${listLength}) ending with the highest (#1). The item should not contain its position`,
           "items": {
             "type": "string"
           },
@@ -68,6 +68,30 @@ async function getVideoInfo(subject, listLength) {
   }
 
   return functionArgs;
+}
+
+async function getVideoIntro({listLength, subject}) {
+  const completion = await openai.chat.completions.create({
+    messages: [
+      { role: 'user', content: `Estoy haciendo un video sobre el top ${listLength} ${subject}. Has una pequeña introducción par el video.` },
+      CONTEXT_MESSAGE,
+    ],
+    model: 'gpt-3.5-turbo-16k',
+  });
+
+  return completion.choices[0].message.content;
+}
+
+async function getVideoOutro({listLength, subject}) {
+  const completion = await openai.chat.completions.create({
+    messages: [
+      { role: 'user', content: `Estoy haciendo un video sobre el top ${listLength} ${subject}. Has una pequeña outro par el video.` },
+      CONTEXT_MESSAGE,
+    ],
+    model: 'gpt-3.5-turbo-16k',
+  });
+
+  return completion.choices[0].message.content;
 }
 
 async function getBody(title, subject, posisition, listLength) {
@@ -103,7 +127,7 @@ async function getImagePrompt(text, listTitle, style) {
 
   const completion = await openai.chat.completions.create({
     messages: [
-      { role: 'user', content: `Your role is to write a single prompt for a text-to-image model. The prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}". The style of the image should be ${style}` },
+      { role: 'user', content: `Your role is to write a single prompt for a text-to-image model. The prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}". The style of the image should be ${style}.` },
       CONTEXT_MESSAGE
     ],
     model: 'gpt-4-0613',
@@ -123,5 +147,7 @@ async function getImagePrompt(text, listTitle, style) {
 export {
   getVideoInfo,
   getBody,
-  getImagePrompt, 
+  getImagePrompt,
+  getVideoIntro,
+  getVideoOutro,
 }
