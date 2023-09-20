@@ -21,8 +21,8 @@ import getRandomTrackLongerThan from './randomTrackLongerThan.js'
 import { mergeMedia, mergeVideos, addVoiceOver, mergeAudioAndImages } from './ffmpegMerger.js';
 import { uploadVideo } from './uploadVideo.js';
 
-const TOP_LIST_TITLE = 'Situaciones incómodas cuando fumas marihuana';
-const TOP_LIST_LENGTH = 10;
+const TOP_LIST_TITLE = 'Momentos más epicos de la historia de Canadá';
+const TOP_LIST_LENGTH = 3;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 
 createProjectDirectories(TOP_LIST_TITLE);
@@ -59,6 +59,12 @@ class Video {
     }, 0);
   }
 
+  get listItems() {
+    return this.items.filter(item => {
+      return item.title !== 'Intro' && item.title !== 'Outro';
+    })
+  }
+
   readJSONFileSync(filePath) {
     try {
       const fileContent = fs.readFileSync(filePath, 'utf8');
@@ -79,32 +85,36 @@ class Video {
       getVideoIntro({subject: this.subject, listLength: this.listLength}),
       getVideoOutro({subject: this.subject, listLength: this.listLength}),
     ]);
-    console.log('INTRO:', introduction)
     
     videoRecord.items = videoRecord.items.map(title => {
       return { title };
     });
+
     this.#setRecord(videoRecord);
 
-
     this.items.unshift(new Item({
-      title: 'intro',
+      title: 'Intro',
       narratorText: introduction,
     }));
     this.items.push(new Item({
-      title: 'outro',
+      title: 'Outro',
       narratorText: outro,
     }));
     
     this.updateRecord();
   }
 
-  async generateNarrationAudio() {
-    await Promise.all(this.items.map(async (itemInstance, index) => {
+  async generateNarrationText() {
+    await Promise.all(this.listItems.map(async (itemInstance, index) => {
       await itemInstance.generateNarrationText(index);
       this.updateRecord();
+    }));
+  }
+
+  async generateNarrationAudio() {
+    await this.generateNarrationText();
+    await Promise.all(this.items.map(async (itemInstance, index) => {
       await itemInstance.generateNarrationAudios();
-    
       this.updateRecord();
     }));
   }
@@ -135,7 +145,9 @@ class Video {
       // Update the accumulated time for the next iteration
       accumulatedTime += item.duration;
 
-      return `${formattedTime} - #${this.items.length - i}: ${item.title}`; // Return the formatted string for this item
+      const position = this.listItems.includes(item) ? `#${this.listLength - this.listItems.indexOf(item)}: ` : '';
+
+      return `${formattedTime} - ${position}${item.title}`; // Return the formatted string for this item
     }).join('\n'); // Join all formatted strings with a newline character
   }
 
@@ -174,7 +186,7 @@ class Item {
 
   async generateNarrationText(index) {
     const numberNames = ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
-    const positionName = numberNames[TOP_LIST_LENGTH - index - 2];
+    const positionName = numberNames[TOP_LIST_LENGTH - index - 1];
 
     if (this.narratorText) {
       return;
@@ -221,6 +233,10 @@ class Item {
   }
 
   async generateVideo() {
+    if (this.outputVideo !== null) {
+      return;
+    }
+
     const outputPath = `${PROJECT_PATH}/videos/${this.sanitizedTitle}.mp4`
     await mergeAudioAndImages(this.audioTrack, this.images, outputPath);
     this.duration = await getVideoDuration(outputPath);
@@ -231,15 +247,13 @@ class Item {
 
 const videoInstance = new Video(TOP_LIST_TITLE, TOP_LIST_LENGTH);
 await videoInstance.generateStructure();
-console.log('📝 Video structure:', videoInstance);
-
 await videoInstance.generateNarrationAudio();
 await videoInstance.generateItemsImages()
 await videoInstance.createItemsVideos();
 
 let videoOutputPath = `./.outputs/TOP ${TOP_LIST_LENGTH} ${TOP_LIST_TITLE}.mp4`.replaceAll(' ', '_');
 
-console.log('Merging videos:', videoInstance);
+console.log('Merging videos...');
 await mergeVideos(videoInstance.items.map(item => item.outputVideo), videoOutputPath);
 
 const videoMusicTrack = await getRandomTrackLongerThan(videoInstance.totalDuration);
@@ -250,4 +264,4 @@ console.log('📹 Full video generated:', videoOutputPath);
 
 const fullDescription = `${videoInstance.description}\n\n${videoInstance.getformatedChapters()}\n\n${videoInstance.hashtags.join(' ')}`;
 console.log(fullDescription);  
-await uploadVideo(videoOutputPath, videoInstance.title, fullDescription);
+// await uploadVideo(videoOutputPath, videoInstance.title, fullDescription);

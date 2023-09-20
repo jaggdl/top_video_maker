@@ -39,44 +39,33 @@ const getAudioDuration = (audioPath) => {
 
 const mergeAudioAndImages = async (audioPath, imagesArray, outputPath) => {
   return new Promise(async (resolve, reject) => {
-    let audioDuration;
-    try {
-      audioDuration = await getAudioDuration(audioPath);
-    } catch (err) {
-      return reject(err);
-    }
+    // Create an FFmpeg command
+    const command = ffmpeg();
 
-    const imageDuration = Math.floor(audioDuration / imagesArray.length);
+    // Set the input image
+    command.input(imagesArray[0]).loop();
 
-    let ffmpegCmd = ffmpeg();
-    ffmpegCmd = ffmpegCmd.addInput(audioPath)
-                          .audioCodec('aac')
-                          .audioChannels(1)
-                          .audioFrequency(22050);
+    // Set the input audio
+    command.input(audioPath);
 
-    imagesArray.forEach((imagePath, index) => {
-      ffmpegCmd = ffmpegCmd.addInput(imagePath).inputOptions([
-        `-t ${imageDuration}`,
-        `-itsoffset ${index * imageDuration}`
-      ]);
+    // Set the output options
+    command.outputOptions([
+      '-c:v libx264',     // Codec for video
+      '-c:a aac',         // Codec for audio
+      '-strict experimental',
+      '-shortest',        // Finish encoding when the shortest input stream ends
+      '-pix_fmt yuv420p', // Pixel format, necessary for some players
+    ])
+    .output(outputPath)  // Output file path
+    .on('end', () => {
+      resolve('Video creation completed');
+    })
+    .on('error', (error) => {
+      reject(`Error occurred: ${error.message}`);
     });
 
-    ffmpegCmd = ffmpegCmd.outputOptions([
-      '-pix_fmt yuv420p', // Set pixel format
-      '-strict experimental'
-    ]).output(outputPath);
-
-    ffmpegCmd
-      .on('end', () => {
-        console.log('Merging completed');
-        resolve();
-      })
-      .on('error', (err) => {
-        console.log('An error occurred:', err.message);
-        reject(err);
-      });
-
-    ffmpegCmd.run();
+    // Run the FFmpeg command
+    command.run();
   });
 };
 
@@ -193,7 +182,9 @@ const mergeVideos = async (videoPaths, finalOutputPath) => {
     ffmpeg()
       .input(listFile)
       .inputOptions(['-f concat', '-safe 0'])
-      .outputOptions('-c copy')
+      .outputOptions([
+        '-c copy',
+      ])
       .output(finalOutputPath)
       .on('end', () => {
         // Clean up the list file
@@ -225,8 +216,6 @@ async function getVideoDurationInSeconds(inputPath) {
 
 async function addVoiceOver(videoFilePath, audioFilePath) {
   return new Promise(async (resolve, reject) => {
-    const videoDuration = await getVideoDurationInSeconds(videoFilePath);
-
     const outputPath = path.join(
       path.dirname(videoFilePath),
       'output_' + path.basename(videoFilePath)
@@ -234,25 +223,28 @@ async function addVoiceOver(videoFilePath, audioFilePath) {
 
     ffmpeg(videoFilePath)
       .input(audioFilePath)
-      .audioCodec('aac')
-      .audioQuality(0)  // Best quality
-      .audioFrequency(44100) // 44.1 kHz sample rate
+      .audioBitrate('320k')
+      .audioChannels(2)
       .complexFilter([
-        { filter: 'pan', options: 'stereo|c0=c0|c1=c0', inputs: '0:a', outputs: 'stereo1' },
-        { filter: 'volume', options: '0.5', inputs: '1:a', outputs: 'stereo2' },
-        { filter: 'amix', options: { inputs: 2 }, inputs: ['stereo1', 'stereo2'], outputs: 'audio' },
+        '[0:a][1:a]amix=inputs=2:duration=first[aout]'
       ])
-      .outputOptions('-map 0:v')
-      .outputOptions('-map [audio]')
-      .outputOptions(`-t ${videoDuration}`)  // Here we specify the duration
-      .outputOptions('-c:v copy')
+      .outputOptions([
+        '-map [aout]',
+        '-map 0:v',
+        '-strict -2',
+        '-async 1'
+      ])
+      .output(outputPath)
       .on('error', (err) => {
-        reject(`An error occurred: ${err.message}`);
+        console.error('An error occurred: ' + err.message);
+        reject(err);
       })
       .on('end', () => {
+        console.log('Merging finished !');
         resolve(outputPath);
       })
-      .save(outputPath);
+      .on('stderr', console.log)
+      .run();
   });
 }
 
