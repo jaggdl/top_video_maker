@@ -18,11 +18,11 @@ import { generateImage } from './generateImage.js';
 import { mergeAudioFiles } from './mergeAudioFiles.js';
 import getVideoDuration from './videoDuration.js';
 import getRandomTrackLongerThan from './randomTrackLongerThan.js'
-import { mergeMedia, mergeVideos, addVoiceOver, mergeAudioAndImages } from './ffmpegMerger.js';
+import { mergeMedia, mergeVideos, mixVideoAndAudio, mergeAudioAndImages } from './ffmpegMerger.js';
 import { uploadVideo } from './uploadVideo.js';
 
-const TOP_LIST_TITLE = 'Momentos más epicos de la historia de Canadá';
-const TOP_LIST_LENGTH = 3;
+const TOP_LIST_TITLE = 'frases estoicas que te dejarán pensando';
+const TOP_LIST_LENGTH = 10;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 
 createProjectDirectories(TOP_LIST_TITLE);
@@ -36,6 +36,7 @@ class Video {
     this.items = null;
     this.hashtags = null;
     this.visualStyle = null;
+    this.videoPath = null;
 
     const videoRecord = this.readJSONFileSync(this.recordPath);
 
@@ -63,6 +64,11 @@ class Video {
     return this.items.filter(item => {
       return item.title !== 'Intro' && item.title !== 'Outro';
     })
+  }
+
+  get fullDescription() {
+    const fullDescription = `${videoInstance.description}\n\n${videoInstance.getformatedChapters()}\n\n${videoInstance.hashtags.join(' ')}`;
+    return fullDescription;
   }
 
   readJSONFileSync(filePath) {
@@ -139,7 +145,7 @@ class Video {
     let accumulatedTime = 0; // Initialize accumulated time to 0
     return this.items.map((item, i) => {
       const minutes = Math.floor(accumulatedTime / 60); // Calculate minutes
-      const seconds = Math.round(accumulatedTime % 60); // Calculate seconds
+      const seconds = Math.floor(accumulatedTime % 60); // Calculate seconds
       const formattedTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`; // Format time as MM:SS
       
       // Update the accumulated time for the next iteration
@@ -149,6 +155,17 @@ class Video {
 
       return `${formattedTime} - ${position}${item.title}`; // Return the formatted string for this item
     }).join('\n'); // Join all formatted strings with a newline character
+  }
+
+  async mergeItemsVideos() {
+    const videoOutputPath = `./.outputs/TOP ${TOP_LIST_LENGTH} ${TOP_LIST_TITLE}.mp4`.replaceAll(' ', '_');
+    await mergeVideos(this.items.map(item => item.outputVideo), videoOutputPath);
+    this.videoPath = videoOutputPath;
+  }
+
+  async mixAudioIntoVideo(audioPath) {
+    const videoOutputPath = await mixVideoAndAudio(this.videoPath, audioPath);
+    this.masterVideoPath = videoOutputPath
   }
 
   #setRecord({title, description, items, hashtags, visual_style}) {
@@ -250,18 +267,12 @@ await videoInstance.generateStructure();
 await videoInstance.generateNarrationAudio();
 await videoInstance.generateItemsImages()
 await videoInstance.createItemsVideos();
-
-let videoOutputPath = `./.outputs/TOP ${TOP_LIST_LENGTH} ${TOP_LIST_TITLE}.mp4`.replaceAll(' ', '_');
-
-console.log('Merging videos...');
-await mergeVideos(videoInstance.items.map(item => item.outputVideo), videoOutputPath);
+await videoInstance.mergeItemsVideos();
 
 const videoMusicTrack = await getRandomTrackLongerThan(videoInstance.totalDuration);
-
 console.log('Adding music track:', videoMusicTrack);
-videoOutputPath = await addVoiceOver(videoOutputPath, videoMusicTrack);
-console.log('📹 Full video generated:', videoOutputPath);
+await videoInstance.mixAudioIntoVideo(videoMusicTrack);
+console.log('📹 Master video generated:', videoInstance.masterVideoPath);
 
-const fullDescription = `${videoInstance.description}\n\n${videoInstance.getformatedChapters()}\n\n${videoInstance.hashtags.join(' ')}`;
-console.log(fullDescription);  
+console.log(videoInstance.fullDescription);  
 // await uploadVideo(videoOutputPath, videoInstance.title, fullDescription);

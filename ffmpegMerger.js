@@ -25,18 +25,6 @@ const resampleAudio = async (inputPath, outputPath) => {
   });
 };
 
-const getAudioDuration = (audioPath) => {
-  return new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(audioPath, (err, metadata) => {
-      if (err) {
-        return reject(err);
-      }
-      const audioDuration = metadata.format.duration;
-      resolve(audioDuration);
-    });
-  });
-};
-
 const mergeAudioAndImages = async (audioPath, imagesArray, outputPath) => {
   return new Promise(async (resolve, reject) => {
     // Create an FFmpeg command
@@ -214,7 +202,7 @@ async function getVideoDurationInSeconds(inputPath) {
   });
 }
 
-async function addVoiceOver(videoFilePath, audioFilePath) {
+async function mixVideoAndAudio(videoFilePath, audioFilePath) {
   return new Promise(async (resolve, reject) => {
     const outputPath = path.join(
       path.dirname(videoFilePath),
@@ -226,7 +214,9 @@ async function addVoiceOver(videoFilePath, audioFilePath) {
       .audioBitrate('320k')
       .audioChannels(2)
       .complexFilter([
-        '[0:a][1:a]amix=inputs=2:duration=first[aout]'
+        '[0:a]volume=2.0[videoAudio]', // Raise video's audio volume by factor of 2
+        '[1:a]volume=0.7[audioFile]', // Keep voice-over audio volume the same (can be adjusted)
+        '[videoAudio][audioFile]amix=inputs=2:duration=first[aout]' // Mix both audio streams
       ])
       .outputOptions([
         '-map [aout]',
@@ -249,4 +239,4 @@ async function addVoiceOver(videoFilePath, audioFilePath) {
 }
 
 
-export { mergeMedia, mergeVideos, addVoiceOver, mergeAudioAndImages };
+export { mergeMedia, mergeVideos, mixVideoAndAudio, mergeAudioAndImages };
