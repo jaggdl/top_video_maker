@@ -18,7 +18,7 @@ async function getVideoInfo(subject, listLength) {
           type: "string",
           description: 'The title of the video'
         },
-        "visual_style": {
+        "visualStyle": {
           type: "string",
           description: 'Suggest the visual style in English for the images in the video'  
         },
