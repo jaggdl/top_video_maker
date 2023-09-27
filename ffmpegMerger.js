@@ -215,7 +215,7 @@ async function mixVideoAndAudio(videoFilePath, audioFilePath) {
       .audioChannels(2)
       .complexFilter([
         '[0:a]volume=2.0[videoAudio]', // Raise video's audio volume by factor of 2
-        '[1:a]volume=0.7[audioFile]', // Keep voice-over audio volume the same (can be adjusted)
+        '[1:a]volume=0.5[audioFile]', // Keep voice-over audio volume the same (can be adjusted)
         '[videoAudio][audioFile]amix=inputs=2:duration=first[aout]' // Mix both audio streams
       ])
       .outputOptions([

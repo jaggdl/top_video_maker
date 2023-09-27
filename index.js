@@ -21,8 +21,10 @@ import getRandomTrackLongerThan from './randomTrackLongerThan.js'
 import { mergeMedia, mergeVideos, mixVideoAndAudio, mergeAudioAndImages } from './ffmpegMerger.js';
 import { uploadVideo } from './uploadVideo.js';
 import { uploadVideoToTiktok } from './uploadVideoToTiktok.js';
+import { renderRemotion } from './renderModule.js';
 
-const TOP_LIST_TITLE = 'Startups exitosas que estuvieron a punto de quebrar';
+// const TOP_LIST_TITLE = 'Películas Basadas en Hechos Reales';
+const TOP_LIST_TITLE = 'Plantas para Interiores';
 const TOP_LIST_LENGTH = 5;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 
@@ -135,8 +137,21 @@ class Video {
   }
 
   async createItemsVideos() {
-    await Promise.all(this.items.map(item => item.generateVideo()));
-    this.updateRecord();
+    for (let item of this.items) {
+      const itemPosition = this.getListItemPosition(item);
+      await item.generateVideo(this.title, itemPosition);
+      this.updateRecord();
+    }
+  }
+
+  getListItemPosition(item) {
+    const index = this.listItems.indexOf(item);
+
+    if (index !== -1) {
+      return this.listItems.length - index;
+    }
+
+    return null
   }
 
   updateRecord() {
@@ -257,13 +272,20 @@ class Item {
     }
   }
 
-  async generateVideo() {
+  async generateVideo(videoTitle, listItemPosition) {
     if (this.outputVideo !== null) {
       return;
     }
 
-    const outputPath = `${PROJECT_PATH}/videos/${this.sanitizedTitle}.mp4`
-    await mergeAudioAndImages(this.audioTrack, this.images, outputPath);
+    const outputPath = path.join(__dirname, `${PROJECT_PATH}/videos/${this.sanitizedTitle}.mp4`);
+    
+    let titleText = listItemPosition ? `#${listItemPosition}: ${this.title}` : videoTitle;
+
+    await renderRemotion(outputPath, {
+      titleText,
+      backgroundImage: this.images[0],
+      audioTrack: this.audioTrack
+    });
     this.duration = await getVideoDuration(outputPath);
     this.outputVideo = outputPath;
   }
@@ -285,5 +307,5 @@ console.log('📹 Master video generated:', videoInstance.masterVideoPath);
 console.log(videoInstance.fullDescription); 
 
 const absoluteVideoPath = path.join(__dirname, videoInstance.videoPath);
-// await uploadVideoToTiktok(absoluteVideoPath, videoInstance.title, videoInstance.hashtags.map(hash => hash.replace('#', '')));
-// await uploadVideo(videoInstance.masterVideoPath, videoInstance.title, videoInstance.fullDescription);
+await uploadVideoToTiktok(absoluteVideoPath, videoInstance.title, videoInstance.hashtags.map(hash => hash.replace('#', '')));
+await uploadVideo(videoInstance.masterVideoPath, videoInstance.title, videoInstance.fullDescription);
