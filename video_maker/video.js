@@ -1,10 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import url from 'url';
 import { Item } from './item.js'
-
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 import { createProjectDirectories } from '../createDirectories.js';
 import {
@@ -97,8 +93,8 @@ export class Video {
       title: 'Outro',
       narratorText: outro,
     }));
-    
-    this.updateRecord();
+
+    await this.generateNarrationText();
   }
 
   async generateNarrationText() {
@@ -109,7 +105,6 @@ export class Video {
   }
 
   async generateNarrationAudio() {
-    await this.generateNarrationText();
     await Promise.all(this.items.map(async (itemInstance, index) => {
       await itemInstance.generateNarrationAudios(this.outputDirectory);
       this.updateRecord();
