@@ -1,4 +1,3 @@
-import fs from 'fs'
 import path from 'path'
 import url from 'url';
 import { Video } from './video_maker/video.js'
@@ -10,15 +9,20 @@ import getRandomTrackLongerThan from './randomTrackLongerThan.js'
 import { uploadVideo } from './uploadVideo.js';
 import { uploadVideoToTiktok } from './uploadVideoToTiktok.js';
 
-const TOP_LIST_TITLE = 'Consejos para ser rico';
+const TOP_LIST_TITLE = 'Consejos para ser YouTuber';
 const TOP_LIST_LENGTH = 5;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 const outputDirectory = path.join(__dirname, `${PROJECT_PATH}`);
 
 const videoInstance = new Video(TOP_LIST_TITLE, TOP_LIST_LENGTH, outputDirectory);
 await videoInstance.generateStructure();
-await videoInstance.generateNarrationAudio();
-await videoInstance.generateItemsImages()
+
+// Both can be run async
+await Promise.all([
+  videoInstance.generateNarrationAudio(),
+  videoInstance.generateItemsImages()
+])
+
 await videoInstance.createItemsVideos({
   concurrentItems: 4
 });

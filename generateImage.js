@@ -1,25 +1,33 @@
 import 'dotenv/config';
-import { spawn } from 'child_process';
 import Replicate from "replicate";
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
+import path from 'path'
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
 
-const generateImage = async (prompt, outputPath) => {
+const generateImages = async (prompt, outputPath) => {
   const imagesUrls = await replicate.run(
     "stability-ai/sdxl:728f6fcbe9b1b61804886c971f5924a41b7fcc5ca05004aa2a636c636a941575",
     {
       input: {
-        prompt
+        prompt,
+        num_outputs: 2
       }
     }
   );
 
-  await saveImageFromUrl(imagesUrls[0], outputPath);
+  const imageFilesPaths = Promise.all(imagesUrls.map(async (url, index) => {
+    const imageFilePath = path.join(outputPath, `${prompt}_${index}.png`)
+    await saveImageFromUrl(url, imageFilePath);
+    return imageFilePath;
+  }))
+
+  return imageFilesPaths;
+
 };
 
 async function generateNumberImage(prompt, number, outputPath) {
@@ -63,4 +71,4 @@ async function saveImageFromUrl(url, outputPath) {
 
 
 
-export { generateImage, generateNumberImage };
+export { generateImages, generateNumberImage };

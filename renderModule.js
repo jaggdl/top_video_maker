@@ -3,8 +3,8 @@ import { basename, join } from 'path';
 import { promises as fs } from 'fs';
 
 export async function renderRemotion(outputPath, propsObject) {
-  return new Promise((resolve, reject) => {
-    prepareAssets(propsObject);
+  return new Promise(async (resolve, reject) => {
+    await prepareAssets(propsObject);
 
     const propsString = JSON.stringify(propsObject);
 
@@ -43,24 +43,34 @@ export async function renderRemotion(outputPath, propsObject) {
 
 async function prepareAssets(propsObject) {
   await Promise.all([
-    'backgroundImage',
+    'backgroundImages',
     'audioTrack'
   ].map(async key => {
-    const oldPath = propsObject[key];
-    const newDir = './video_renderer/public';
-    const filename = basename(oldPath);
-  
-    propsObject[key] = filename;
-    
-    const newPath = join(newDir, filename);
-  
-    // Move the image file to the new directory
-    try {
-      await fs.copyFile(oldPath, newPath);
-      console.log(`File moved to ${newPath}`);
-    } catch (error) {
-      console.error(`Failed to move file: ${error}`);
-      return;
+    const propValue = propsObject[key];
+
+    if (Array.isArray(propValue)) {
+      return Promise.all(propValue.map((propItem, index) => copyFileAndUpdatePath(propValue, index)));
     }
+
+    await copyFileAndUpdatePath(propsObject, key);
   }));
+}
+
+async function copyFileAndUpdatePath(propsObject, key) {
+  const oldPath = propsObject[key];
+  const newDir = './video_renderer/public';
+  const filename = basename(oldPath);
+
+  propsObject[key] = filename;
+  
+  const newPath = join(newDir, filename);
+
+  // Move the image file to the new directory
+  try {
+    await fs.copyFile(oldPath, newPath);
+    console.log(`File moved to ${newPath}`);
+  } catch (error) {
+    console.error(`Failed to move file: ${error}`);
+    return;
+  }
 }

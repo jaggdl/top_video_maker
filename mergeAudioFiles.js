@@ -1,10 +1,12 @@
 import fs from 'fs';
 import { spawn } from 'child_process';
+import crypto from 'crypto';
 
 export const mergeAudioFiles = async (inputFiles, outputFile) => {
   return new Promise((resolve, reject) => {
     // Create a temporary text file and write the list of audio files to it.
-    const tempFileName = 'temp.txt';
+    const tempFileHash = crypto.randomBytes(length).toString('hex');
+    const tempFileName = `temp_${tempFileHash}.txt`;
     const fileData = inputFiles.map(file => `file '${file}'`).join('\n');
     fs.writeFileSync(tempFileName, fileData);
 

@@ -1,15 +1,11 @@
 import path from 'path'
-import url from 'url';
-
-const __filename = url.fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 import {
   getBody,
   getImagePrompt,
 } from '../textGenerator.js';
 import { generateAudio } from '../generateAudio.js';
-import { generateImage, generateNumberImage } from '../generateImage.js';
+import { generateImages, generateNumberImage } from '../generateImage.js';
 import { mergeAudioFiles } from '../mergeAudioFiles.js';
 import getVideoDuration from '../videoDuration.js';
 import { renderRemotion } from '../renderModule.js';
@@ -69,22 +65,24 @@ export class Item {
   }
 
   async generateImages(visualStyle, listSubject, projectOuputhDir) {
-    if (this.images) {
+    if (this.images && this.images.length) {
       return;
     }
 
     this.images = [];
-    const imageOutputPath = `${projectOuputhDir}/images/${this.sanitizedTitle}.png`
+    const imageOutputPath = `${projectOuputhDir}/images`
     console.log('📝🏞️ Generating prompt for image generation of', this.title);
     const imagePrompts = await getImagePrompt(this.title, listSubject, visualStyle);
     console.log('Image prompts generated:', imagePrompts);
 
     for (let imgPrompt of imagePrompts) {
       console.log('🎆 Generating image for', this.title, 'with prompt', imgPrompt);
-      await generateImage(imgPrompt, imageOutputPath);
+      const images = await generateImages(imgPrompt, imageOutputPath);
       console.log('🎆 Saved image for', this.title, 'with prompt', imgPrompt, 'in', imageOutputPath);
-      this.images.push(imageOutputPath)
+      this.images.push(...images)
     }
+
+    console.log(this.images)
   }
 
   async generateVideo(videoTitle, listItemPosition, projectOuputhDir) {
@@ -98,7 +96,7 @@ export class Item {
 
     await renderRemotion(outputPath, {
       titleText,
-      backgroundImage: this.images[0],
+      backgroundImages: this.images,
       audioTrack: this.audioTrack
     });
     this.duration = await getVideoDuration(outputPath);
