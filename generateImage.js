@@ -21,7 +21,8 @@ const generateImages = async (prompt, outputPath) => {
   );
 
   const imageFilesPaths = Promise.all(imagesUrls.map(async (url, index) => {
-    const imageFilePath = path.join(outputPath, `${prompt}_${index}.png`)
+    const sanitizedPrompt = sanitizeFileName(prompt);
+    const imageFilePath = path.join(outputPath, `${sanitizedPrompt}_${index}.png`);
     await saveImageFromUrl(url, imageFilePath);
     return imageFilePath;
   }))
@@ -29,6 +30,13 @@ const generateImages = async (prompt, outputPath) => {
   return imageFilesPaths;
 
 };
+
+function sanitizeFileName(fileName) {
+  return fileName
+    .replace(/[\/\\:*?"<>|]/g, '_') // Replace special characters with underscore
+    .replace(/\s+/g, '_') // Replace spaces with underscore
+    .slice(0, 255); // Truncate to the maximum file name length
+}
 
 async function generateNumberImage(prompt, number, outputPath) {
   const numberImagePath = './eight.png'

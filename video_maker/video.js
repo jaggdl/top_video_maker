@@ -118,6 +118,22 @@ export class Video {
     }));
   }
 
+  async generateItemsVideos() {
+    await Promise.all(this.items.map(async (item, index) => {
+      const itemPosition = this.getListItemPosition(item);
+      await item.generateFullVideo({
+        index,
+        subject: this.subject,
+        listLength: this.listLength,
+        outputDirectory: this.outputDirectory,
+        visualStyle: this.visualStyle,
+        title: this.title,
+        itemPosition
+      });
+      this.updateRecord();
+    }));
+  }
+
   async createItemsVideos({concurrentItems = this.items.length}) {
     for (let i = 0; i < this.items.length; i += concurrentItems) {
       const promises = [];

@@ -35,6 +35,23 @@ export class Item {
     return limitedTitle;
   }
 
+  async generateFullVideo({
+    index,
+    title,
+    subject,
+    listLength,
+    outputDirectory,
+    visualStyle,
+    itemPosition,
+  }) {
+    await this.generateNarrationText(index, subject, listLength);
+    await Promise.all([
+      this.generateNarrationAudios(outputDirectory),
+      this.generateImages(visualStyle, subject, outputDirectory),
+    ]);
+    await this.generateVideo(title, itemPosition, outputDirectory);
+  }
+
   async generateNarrationText(index, listSubject, listLength) {
     const numberNames = ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
     const positionName = numberNames[listLength - index - 1];
@@ -65,6 +82,11 @@ export class Item {
   }
 
   async generateImages(visualStyle, listSubject, projectOuputhDir) {
+
+    if (!projectOuputhDir) {
+      throw `No projectOuputhDir set for generateImages`
+    }
+
     if (this.images && this.images.length) {
       return;
     }
