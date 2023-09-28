@@ -17,7 +17,7 @@ export async function renderRemotion(outputPath, propsObject) {
     ];
 
     const child = spawn(command, args, {
-      cwd: './video_renderer', // specify the current working directory for the command
+      cwd: process.env.VIDEO_RENDERER_PATH, // specify the current working directory for the command
     });
 
     child.stdout.on('data', (data) => {
@@ -58,7 +58,7 @@ async function prepareAssets(propsObject) {
 
 async function copyFileAndUpdatePath(propsObject, key) {
   const oldPath = propsObject[key];
-  const newDir = './video_renderer/public';
+  const newDir = `${process.env.VIDEO_RENDERER_PATH}/public`;
   const filename = basename(oldPath);
 
   propsObject[key] = filename;

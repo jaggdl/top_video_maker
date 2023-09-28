@@ -9,7 +9,7 @@ import getRandomTrackLongerThan from './randomTrackLongerThan.js'
 import { uploadVideo } from './uploadVideo.js';
 import { uploadVideoToTiktok } from './uploadVideoToTiktok.js';
 
-const TOP_LIST_TITLE = 'Consejos para ser YouTuber';
+const TOP_LIST_TITLE = 'Consejos para ser piloto de F1';
 const TOP_LIST_LENGTH = 5;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 const outputDirectory = path.join(__dirname, `${PROJECT_PATH}`);
