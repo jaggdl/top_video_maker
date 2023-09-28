@@ -14,7 +14,7 @@ import {
   getVideoOutro,
 } from './textGenerator.js';
 import { generateAudio } from './generateAudio.js';
-import { generateImage } from './generateImage.js';
+import { generateImage, generateNumberImage } from './generateImage.js';
 import { mergeAudioFiles } from './mergeAudioFiles.js';
 import getVideoDuration from './videoDuration.js';
 import getRandomTrackLongerThan from './randomTrackLongerThan.js'
@@ -23,8 +23,7 @@ import { uploadVideo } from './uploadVideo.js';
 import { uploadVideoToTiktok } from './uploadVideoToTiktok.js';
 import { renderRemotion } from './renderModule.js';
 
-// const TOP_LIST_TITLE = 'Películas Basadas en Hechos Reales';
-const TOP_LIST_TITLE = 'Plantas para Interiores';
+const TOP_LIST_TITLE = 'Formas de Ahorrar Agua en el Hogar';
 const TOP_LIST_LENGTH = 5;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 
@@ -307,5 +306,5 @@ console.log('📹 Master video generated:', videoInstance.masterVideoPath);
 console.log(videoInstance.fullDescription); 
 
 const absoluteVideoPath = path.join(__dirname, videoInstance.videoPath);
-await uploadVideoToTiktok(absoluteVideoPath, videoInstance.title, videoInstance.hashtags.map(hash => hash.replace('#', '')));
-await uploadVideo(videoInstance.masterVideoPath, videoInstance.title, videoInstance.fullDescription);
+// await uploadVideoToTiktok(absoluteVideoPath, videoInstance.title, videoInstance.hashtags.map(hash => hash.replace('#', '')));
+// await uploadVideo(videoInstance.masterVideoPath, videoInstance.title, videoInstance.fullDescription);
