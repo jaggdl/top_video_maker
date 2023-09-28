@@ -9,7 +9,6 @@ const replicate = new Replicate({
 });
 
 
-
 const generateImage = async (prompt, outputPath) => {
   const imagesUrls = await replicate.run(
     "stability-ai/sdxl:728f6fcbe9b1b61804886c971f5924a41b7fcc5ca05004aa2a636c636a941575",
@@ -22,7 +21,6 @@ const generateImage = async (prompt, outputPath) => {
 
   await saveImageFromUrl(imagesUrls[0], outputPath);
 };
-
 
 async function generateNumberImage(prompt, number, outputPath) {
   const numberImagePath = './eight.png'

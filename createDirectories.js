@@ -1,9 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 
-export function createProjectDirectories(projectName) {
-  const baseDir = './.outputs';
-  const projectDir = path.join(baseDir, projectName);
+export function createProjectDirectories(projectDir) {
+  const baseDir = './.outputs'
   const subDirs = ['audio', 'images', 'videos'];
 
   // Create the base directory if it doesn't exist
@@ -24,5 +23,5 @@ export function createProjectDirectories(projectName) {
     }
   }
 
-  console.log(`Project directories created for ${projectName}`);
+  console.log(`Project directories created in ${projectDir}`);
 }
