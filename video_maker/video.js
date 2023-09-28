@@ -117,19 +117,26 @@ export class Video {
   }
 
   async generateItemsImages() {
-    for (let item of this.items) {
+    await Promise.all(this.items.map(async item => {
       await item.generateImages(this.visualStyle, this.subject, this.outputDirectory);
       this.updateRecord();
-    }
+    }));
   }
 
-  async createItemsVideos() {
-    for (let item of this.items) {
-      const itemPosition = this.getListItemPosition(item);
-      await item.generateVideo(this.title, itemPosition, this.outputDirectory);
-      this.updateRecord();
+  async createItemsVideos({concurrentItems = this.items.length}) {
+    for (let i = 0; i < this.items.length; i += concurrentItems) {
+      const promises = [];
+      for (let j = 0; j < concurrentItems && i + j < this.items.length; j++) {
+        const item = this.items[i + j];
+        const itemPosition = this.getListItemPosition(item);
+        promises.push(item.generateVideo(this.title, itemPosition, this.outputDirectory).then(() => {
+          this.updateRecord();
+        }));
+      }
+      await Promise.all(promises);
     }
   }
+  
 
   getListItemPosition(item) {
     const index = this.listItems.indexOf(item);

@@ -21,7 +21,7 @@ export async function renderRemotion(outputPath, propsObject) {
     });
 
     child.stdout.on('data', (data) => {
-      console.log(`${data}`);
+      // console.log(data.toString());
     });
 
     child.stderr.on('data', (data) => {
