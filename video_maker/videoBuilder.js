@@ -23,7 +23,7 @@ export async function buildVideo({
     await Promise.all([
       videoInstance.generateNarrationAudio(),
       videoInstance.generateItemsImages()
-    ])
+    ]);
   
     await videoInstance.createItemsVideos({
       concurrentItems: Math.ceil(videoInstance.items.length / 2)

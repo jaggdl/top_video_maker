@@ -113,7 +113,8 @@ export class Video {
 
   async generateItemsImages() {
     await Promise.all(this.items.map(async item => {
-      await item.generateImages(this.visualStyle, this.subject, this.outputDirectory);
+      const itemPosition = this.getListItemPosition(item);
+      await item.generateImages(this.visualStyle, this.subject, this.outputDirectory, itemPosition);
       this.updateRecord();
     }));
   }

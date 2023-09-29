@@ -47,7 +47,7 @@ export class Item {
     await this.generateNarrationText(index, subject, listLength);
     await Promise.all([
       this.generateNarrationAudios(outputDirectory),
-      this.generateImages(visualStyle, subject, outputDirectory),
+      this.generateImages(visualStyle, subject, outputDirectory, itemPosition),
     ]);
     await this.generateVideo(title, itemPosition, outputDirectory);
   }
@@ -81,8 +81,7 @@ export class Item {
     this.audioTrack = audioTrackPath
   }
 
-  async generateImages(visualStyle, listSubject, projectOuputhDir) {
-
+  async generateImages(visualStyle, listSubject, projectOuputhDir, itemPosition) {
     if (!projectOuputhDir) {
       throw `No projectOuputhDir set for generateImages`
     }
@@ -96,6 +95,12 @@ export class Item {
     console.log('📝🏞️ Generating prompt for image generation of', this.title);
     const imagePrompts = await getImagePrompt(this.title, listSubject, visualStyle);
     console.log('Image prompts generated:', imagePrompts);
+    
+    if (itemPosition) {
+      const positionImagePrompts = await getImagePrompt(this.title, listSubject);
+      const positionNumberImage = await generateNumberImage(positionImagePrompts[0], itemPosition, imageOutputPath);
+      this.images.push(positionNumberImage);
+    }
 
     for (let imgPrompt of imagePrompts) {
       console.log('🎆 Generating image for', this.title, 'with prompt', imgPrompt);

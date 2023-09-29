@@ -2,7 +2,11 @@ import 'dotenv/config';
 import Replicate from "replicate";
 import fs from 'fs/promises';
 import fetch from 'node-fetch';
-import path from 'path'
+import path from 'path';
+import url from 'url';
+
+const __filename = url.fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
@@ -39,7 +43,10 @@ function sanitizeFileName(fileName) {
 }
 
 async function generateNumberImage(prompt, number, outputPath) {
-  const numberImagePath = './eight.png'
+  const numberImagePath = path.join(__dirname, `../../assets/${number}.png`);
+
+  const sanitizedPrompt = sanitizeFileName(prompt);
+  const imageFilePath = path.join(outputPath, `${number}_${sanitizedPrompt}.png`);
 
   // Load the image and convert it to base64
   const base64Image = await fs.readFile(numberImagePath, {encoding: 'base64'});
@@ -58,11 +65,14 @@ async function generateNumberImage(prompt, number, outputPath) {
         num_outputs: 1,
         image: imageUri,
         qr_code_content: '',
+        controlnet_conditioning_scale: 1,
       }
     }
   );
 
-  await saveImageFromUrl(imagesUrls[0], outputPath);
+  await saveImageFromUrl(imagesUrls[0], imageFilePath);
+
+  return imageFilePath;
 }
 
 async function saveImageFromUrl(url, outputPath) {
