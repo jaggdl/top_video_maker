@@ -53,7 +53,7 @@ const mergeVideos = async (videoPaths, finalOutputPath) => {
   }
 
   const hash = generateHash();
-  const tempDir = path.join(__dirname, '../../.outputs', `temp_${hash}`);
+  const tempDir = path.join(__dirname, '../../out', `temp_${hash}`);
   if (!fs.existsSync(tempDir)) {
     fs.mkdirSync(tempDir);
   }

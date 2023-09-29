@@ -1,5 +1,5 @@
 .env
-.outputs
+out
 node_modules
 credentials.json
 token.json

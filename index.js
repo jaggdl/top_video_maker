@@ -11,7 +11,7 @@ const __dirname = path.dirname(__filename);
 
 const TOP_LIST_TITLE = 'autos deportivos de la década de los 00s';
 const TOP_LIST_LENGTH = 5;
-const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
+const PROJECT_PATH = `./out/${TOP_LIST_TITLE}`;
 const outputDirectory = path.join(__dirname, `${PROJECT_PATH}`);
 const generateItemsAsync = true;
 

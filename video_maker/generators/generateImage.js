@@ -11,7 +11,7 @@ const replicate = new Replicate({
 
 const generateImages = async (prompt, outputPath) => {
   const imagesUrls = await replicate.run(
-    "stability-ai/sdxl:728f6fcbe9b1b61804886c971f5924a41b7fcc5ca05004aa2a636c636a941575",
+    "stability-ai/sdxl:af1a68a271597604546c09c64aabcd7782c114a63539a4a8d14d1eeda5630c33",
     {
       input: {
         prompt,
