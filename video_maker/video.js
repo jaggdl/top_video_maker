@@ -2,13 +2,13 @@ import fs from 'fs'
 import path from 'path'
 import { Item } from './item.js'
 
-import { createProjectDirectories } from '../createDirectories.js';
+import { createProjectDirectories } from './utils/createDirectories.js';
 import {
   getVideoInfo,
   getVideoIntro,
   getVideoOutro,
-} from '../textGenerator.js';
-import { mergeVideos, mixVideoAndAudio } from '../ffmpegMerger.js';
+} from './generators/textGenerator.js';
+import { mergeVideos, mixVideoAndAudio } from './utils/ffmpegMerger.js';
 
 export class Video {
   constructor(subject, listLength, outputDirectory) {

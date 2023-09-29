@@ -7,7 +7,7 @@ const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default async function getRandomTrackLongerThan(seconds) {
-  const musicDir = path.join(__dirname, './music');
+  const musicDir = path.join(__dirname, '../../music');
   const files = fs.readdirSync(musicDir);
   const tracks = [];
 

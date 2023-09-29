@@ -1,23 +1,22 @@
 import path from 'path'
 import url from 'url';
 import { Video } from './video_maker/video.js'
+import getRandomTrackLongerThan from './video_maker/utils/randomTrackLongerThan.js'
+import { uploadVideo } from './uploaders/uploadVideo.js';
+import { uploadVideoToTiktok } from './uploaders/uploadVideoToTiktok.js';
 
 const __filename = url.fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-import getRandomTrackLongerThan from './randomTrackLongerThan.js'
-import { uploadVideo } from './uploadVideo.js';
-import { uploadVideoToTiktok } from './uploadVideoToTiktok.js';
 
-const TOP_LIST_TITLE = 'guitarras legendarias';
-const TOP_LIST_LENGTH = 10;
+const TOP_LIST_TITLE = 'autos deportivos de la década de los 00s';
+const TOP_LIST_LENGTH = 5;
 const PROJECT_PATH = `./.outputs/${TOP_LIST_TITLE}`;
 const outputDirectory = path.join(__dirname, `${PROJECT_PATH}`);
+const generateItemsAsync = true;
 
 const videoInstance = new Video(TOP_LIST_TITLE, TOP_LIST_LENGTH, outputDirectory);
 await videoInstance.generateStructure();
-
-const generateItemsAsync = true;
 
 if (generateItemsAsync) {
   await videoInstance.generateItemsVideos();

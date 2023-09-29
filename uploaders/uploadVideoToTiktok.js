@@ -6,7 +6,7 @@ const uploadVideoToTiktok = (file, title, tags, schedule_time) => {
   console.log('Uploading to TikTok:', file, title, tags, schedule_time)
   return new Promise((resolve, reject) => {
     const pyProcess = spawn('python', [
-      './Tiktok_uploader.py',
+      'py_scripts/tiktok_uploader.py',
       '-i', SESSION_ID,
       '-p', file,
       '-t', title,

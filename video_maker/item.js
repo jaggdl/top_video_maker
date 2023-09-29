@@ -3,12 +3,12 @@ import path from 'path'
 import {
   getBody,
   getImagePrompt,
-} from '../textGenerator.js';
-import { generateAudio } from '../generateAudio.js';
-import { generateImages, generateNumberImage } from '../generateImage.js';
-import { mergeAudioFiles } from '../mergeAudioFiles.js';
-import getVideoDuration from '../videoDuration.js';
-import { renderRemotion } from '../renderModule.js';
+} from './generators/textGenerator.js';
+import { generateAudio } from './generators/generateAudio.js';
+import { generateImages, generateNumberImage } from './generators/generateImage.js';
+import { mergeAudioFiles } from './utils/mergeAudioFiles.js';
+import getVideoDuration from './utils/videoDuration.js';
+import { renderRemotion } from './renderModule.js';
 
 
 export class Item {

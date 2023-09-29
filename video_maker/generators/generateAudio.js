@@ -2,7 +2,7 @@ import { spawn } from 'child_process';
 
 const generateAudio = (text, outputDirectory) => {
   return new Promise((resolve, reject) => {
-    const pyProcess = spawn('python', ['generate_tts_audio.py', text, outputDirectory]);
+    const pyProcess = spawn('python', ['py_scripts/generate_tts_audio.py', text, outputDirectory]);
     
     let dataString = '';
     pyProcess.stdout.on('data', (data) => {
