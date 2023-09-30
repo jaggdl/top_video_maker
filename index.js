@@ -2,11 +2,17 @@ import { buildVideo } from './video_maker/videoBuilder.js';
 import { uploadVideo } from './uploaders/uploadVideo.js';
 import { uploadVideoToTiktok } from './uploaders/uploadVideoToTiktok.js';
 
+const subject = process.argv[3];
+const listLength = Number(process.argv[2]);
+const shouldUpload = process.argv[4] === 'true';
+
 const videoInstance = await buildVideo({
-  subject: 'Paisajes imperdibles de Sonora, México',
-  listLength: 5,
+  subject,
+  listLength,
   asyncItemsBuild: false,
 });
 
-// await uploadVideoToTiktok(videoInstance.videoPath, videoInstance.title, videoInstance.hashtags.map(hash => hash.replace('#', '')));
-// await uploadVideo(videoInstance.masterVideoPath, videoInstance.title, videoInstance.fullDescription);
+if (shouldUpload) {
+  await uploadVideoToTiktok(videoInstance);
+  await uploadVideo(videoInstance);
+}

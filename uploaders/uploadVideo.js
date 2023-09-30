@@ -4,7 +4,11 @@ import fs from 'fs';
 import readline from 'readline';
 
 // Load client secrets from a file.
-export async function uploadVideo(filePath, title, description) {
+export async function uploadVideo(videoInstance) {
+  const filePath = videoInstance.masterVideoPath;
+  const title = videoInstance.title;
+  const description = videoInstance.fullDescription;
+  
   try {
     const content = fs.readFileSync('credentials.json');
     await authorize(JSON.parse(content), filePath, title, description);

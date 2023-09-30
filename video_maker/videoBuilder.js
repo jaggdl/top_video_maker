@@ -11,6 +11,11 @@ export async function buildVideo({
   listLength = 5,
   asyncItemsBuild = true
 }) {
+
+  if (!subject) {
+    throw Error('Subject is required')
+  }
+
   const projectPath = `../out/${subject}`;
   const outputDirectory = path.join(__dirname, `${projectPath}`);
   const videoInstance = new Video(subject, listLength, outputDirectory);
