@@ -13,13 +13,14 @@ const replicate = new Replicate({
 });
 
 
-const generateImages = async (prompt, outputPath) => {
+const generateImages = async (prompt, outputPath, numberOfImages = 2, dimensions) => {
   const imagesUrls = await replicate.run(
     "stability-ai/sdxl:af1a68a271597604546c09c64aabcd7782c114a63539a4a8d14d1eeda5630c33",
     {
       input: {
         prompt,
-        num_outputs: 2
+        num_outputs: numberOfImages,
+        ...dimensions
       }
     }
   );
@@ -36,13 +37,17 @@ const generateImages = async (prompt, outputPath) => {
 };
 
 function sanitizeFileName(fileName) {
-  return fileName
-    .replace(/[\/\\:*?"<>|]/g, '_') // Replace special characters with underscore
-    .replace(/\s+/g, '_') // Replace spaces with underscore
-    .slice(0, 255); // Truncate to the maximum file name length
+  // Remove characters that are not numbers or letters
+  fileName = fileName.replace(/[^a-zA-Z0-9]/g, '');
+
+  // Replace spaces with underscores
+  fileName = fileName.replace(/\s+/g, '_');
+
+  // Truncate to the maximum file name length
+  return fileName.slice(0, 255);
 }
 
-async function generateNumberImage(prompt, number, outputPath) {
+async function generateNumberImage(prompt, number, outputPath, dimensions) {
   const numberImagePath = path.join(__dirname, `../../assets/${number}.png`);
 
   const sanitizedPrompt = sanitizeFileName(prompt);
@@ -60,8 +65,7 @@ async function generateNumberImage(prompt, number, outputPath) {
         num_inference_steps: 40,
         guidance_scale: 7.5,
         seed: -1,
-        width: 1024,
-        height: 1024,
+        ...dimensions,
         num_outputs: 1,
         image: imageUri,
         qr_code_content: '',

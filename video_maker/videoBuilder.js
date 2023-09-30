@@ -9,34 +9,40 @@ const __dirname = path.dirname(__filename);
 export async function buildVideo({
   subject,
   listLength = 5,
-  asyncItemsBuild = true
+  formats = [
+    [1024, 1024]
+  ]
 }) {
 
   if (!subject) {
-    throw Error('Subject is required')
+    throw Error('Subject is required');
   }
 
   const projectPath = `../out/${subject}`;
   const outputDirectory = path.join(__dirname, `${projectPath}`);
   const videoInstance = new Video(subject, listLength, outputDirectory);
   await videoInstance.generateStructure();
-  
-  if (asyncItemsBuild) {
-    await videoInstance.generateItemsVideos();
-  } else {
+
+
+  for (let format of formats) {
+
+    let dimensions = {
+      width: format[0],
+      height: format[1],
+    }
     // Both can be run async
     await Promise.all([
       videoInstance.generateNarrationAudio(),
-      videoInstance.generateItemsImages()
+      videoInstance.generateItemsImages(dimensions)
     ]);
-  
+
     await videoInstance.createItemsVideos({
-      concurrentItems: Math.ceil(videoInstance.items.length / 2)
+      concurrentItems: 1,
+      dimensions
     });
+
+    await videoInstance.mergeItemsVideos();
   }
-  
-  
-  await videoInstance.mergeItemsVideos();
   
   const videoMusicTrack = await getRandomTrackLongerThan(videoInstance.totalDuration);
   console.log('Adding music track:', videoMusicTrack);

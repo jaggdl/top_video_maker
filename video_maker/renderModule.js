@@ -3,6 +3,7 @@ import { basename, join } from 'path';
 import { promises as fs } from 'fs';
 
 export async function renderRemotion(outputPath, propsObject) {
+  propsObject = JSON.parse(JSON.stringify(propsObject));
   return new Promise(async (resolve, reject) => {
     await prepareAssets(propsObject);
 

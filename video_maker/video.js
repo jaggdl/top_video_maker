@@ -111,37 +111,21 @@ export class Video {
     }));
   }
 
-  async generateItemsImages() {
+  async generateItemsImages(dimensions) {
     await Promise.all(this.items.map(async item => {
       const itemPosition = this.getListItemPosition(item);
-      await item.generateImages(this.visualStyle, this.subject, this.outputDirectory, itemPosition);
+      await item.generateImages(this.visualStyle, this.subject, this.outputDirectory, itemPosition, dimensions);
       this.updateRecord();
     }));
   }
 
-  async generateItemsVideos() {
-    await Promise.all(this.items.map(async (item, index) => {
-      const itemPosition = this.getListItemPosition(item);
-      await item.generateFullVideo({
-        index,
-        subject: this.subject,
-        listLength: this.listLength,
-        outputDirectory: this.outputDirectory,
-        visualStyle: this.visualStyle,
-        title: this.title,
-        itemPosition
-      });
-      this.updateRecord();
-    }));
-  }
-
-  async createItemsVideos({concurrentItems = this.items.length}) {
+  async createItemsVideos({concurrentItems = this.items.length, dimensions}) {
     for (let i = 0; i < this.items.length; i += concurrentItems) {
       const promises = [];
       for (let j = 0; j < concurrentItems && i + j < this.items.length; j++) {
         const item = this.items[i + j];
         const itemPosition = this.getListItemPosition(item);
-        promises.push(item.generateVideo(this.title, itemPosition, this.outputDirectory).then(() => {
+        promises.push(item.generateVideo(this.title, itemPosition, this.outputDirectory, dimensions).then(() => {
           this.updateRecord();
         }));
       }

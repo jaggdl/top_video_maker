@@ -35,23 +35,6 @@ export class Item {
     return limitedTitle;
   }
 
-  async generateFullVideo({
-    index,
-    title,
-    subject,
-    listLength,
-    outputDirectory,
-    visualStyle,
-    itemPosition,
-  }) {
-    await this.generateNarrationText(index, subject, listLength);
-    await Promise.all([
-      this.generateNarrationAudios(outputDirectory),
-      this.generateImages(visualStyle, subject, outputDirectory, itemPosition),
-    ]);
-    await this.generateVideo(title, itemPosition, outputDirectory);
-  }
-
   async generateNarrationText(index, listSubject, listLength) {
     const numberNames = ['uno', 'dos', 'tres', 'cuatro', 'cinco', 'seis', 'siete', 'ocho', 'nueve', 'diez'];
     const positionName = numberNames[listLength - index - 1];
@@ -81,7 +64,7 @@ export class Item {
     this.audioTrack = audioTrackPath
   }
 
-  async generateImages(visualStyle, listSubject, projectOuputhDir, itemPosition) {
+  async generateImages(visualStyle, listSubject, projectOuputhDir, itemPosition, dimensions) {
     if (!projectOuputhDir) {
       throw `No projectOuputhDir set for generateImages`
     }
@@ -98,13 +81,14 @@ export class Item {
     
     if (itemPosition) {
       const positionImagePrompts = await getImagePrompt(this.title, listSubject);
-      const positionNumberImage = await generateNumberImage(positionImagePrompts[0], itemPosition, imageOutputPath);
+      const positionNumberImage = await generateNumberImage(positionImagePrompts[0], itemPosition, imageOutputPath, dimensions);
       this.images.push(positionNumberImage);
     }
 
     for (let imgPrompt of imagePrompts) {
       console.log('🎆 Generating image for', this.title, 'with prompt', imgPrompt);
-      const images = await generateImages(imgPrompt, imageOutputPath);
+      const totalImages = 3 - this.images.length;
+      const images = await generateImages(imgPrompt, imageOutputPath, totalImages, dimensions);
       console.log('🎆 Saved image for', this.title, 'with prompt', imgPrompt, 'in', imageOutputPath);
       this.images.push(...images)
     }
@@ -112,7 +96,7 @@ export class Item {
     console.log(this.images)
   }
 
-  async generateVideo(videoTitle, listItemPosition, projectOuputhDir) {
+  async generateVideo(videoTitle, listItemPosition, projectOuputhDir, dimensions) {
     if (this.outputVideo !== null) {
       return;
     }
@@ -124,7 +108,8 @@ export class Item {
     await renderRemotion(outputPath, {
       titleText,
       backgroundImages: this.images,
-      audioTrack: this.audioTrack
+      audioTrack: this.audioTrack,
+      ...dimensions
     });
     this.duration = await getVideoDuration(outputPath);
     this.outputVideo = outputPath;
