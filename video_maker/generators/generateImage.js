@@ -15,10 +15,12 @@ const replicate = new Replicate({
 
 const generateImages = async (prompt, outputPath, numberOfImages = 2, dimensions) => {
   const imagesUrls = await replicate.run(
-    "stability-ai/sdxl:af1a68a271597604546c09c64aabcd7782c114a63539a4a8d14d1eeda5630c33",
+    "lucataco/ssd-1b:1ee85ef681d5ad3d6870b9da1a4543cb3ad702d036fa5b5210f133b83b05a780",
     {
       input: {
         prompt,
+        guidance_scale: 9,
+        num_inference_steps: 25,
         num_outputs: numberOfImages,
         ...dimensions
       }
@@ -38,7 +40,10 @@ const generateImages = async (prompt, outputPath, numberOfImages = 2, dimensions
 
 function sanitizeFileName(fileName) {
   // Remove characters that are not numbers or letters
-  fileName = fileName.replace(/[^a-zA-Z0-9]/g, '');
+  fileName = fileName.replace(/[^a-zA-Z0-9\s]/g, '');
+
+  // Convert to lowercase
+  fileName = fileName.toLowerCase();
 
   // Replace spaces with underscores
   fileName = fileName.replace(/\s+/g, '_');
@@ -61,7 +66,7 @@ async function generateNumberImage(prompt, number, outputPath, dimensions) {
     {
       input: {
         prompt,
-        negative_prompt: 'ugly, disfigured, low quality, blurry, nsfw',
+        negative_prompt: 'ugly, disfigured, low quality, blurry, nsfw, infographic',
         num_inference_steps: 40,
         guidance_scale: 7.5,
         seed: -1,

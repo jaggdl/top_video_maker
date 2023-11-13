@@ -54,7 +54,8 @@ export class Video {
   }
 
   get fullDescription() {
-    const fullDescription = `${this.description}\n\n${this.getformatedChapters()}\n\n${this.hashtags.join(' ')}`;
+    const reposInfo = `Estos videos son generados con distintos modelos de AI como ChatGPT, Stable Diffussion, entre otros. El código fuente es público y se puede encontrar en los siguientes enlaces:\nhttps://github.com/jaggdl/top_video_maker\nhttps://github.com/jaggdl/video_renderer\n\nCreado por https://x.com/j_a_garcia`
+    const fullDescription = `${this.description}\n\n${this.getformatedChapters()}\n\n${this.hashtags.join(' ')}\n\n${reposInfo}`;
     return fullDescription;
   }
 

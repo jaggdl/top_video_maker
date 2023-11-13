@@ -16,7 +16,7 @@ async function getVideoInfo(subject, listLength) {
       "properties": {
         "title": {
           type: "string",
-          description: 'The title of the video'
+          description: 'An eye-catching title for the video'
         },
         "visualStyle": {
           type: "string",
@@ -73,7 +73,7 @@ async function getVideoInfo(subject, listLength) {
 async function getVideoIntro({listLength, subject}) {
   const completion = await openai.chat.completions.create({
     messages: [
-      { role: 'user', content: `Estoy haciendo un video sobre el top ${listLength} ${subject}. Has una pequeña introducción par el video.` },
+      { role: 'user', content: `Estoy haciendo un video sobre el top ${listLength} ${subject}. Has una pequeña introducción par el video. Menciona brevemente que te suscribas al canal, dar like, compartir y sugerir nuevos temas para futuros videos en los comentarios` },
       CONTEXT_MESSAGE,
     ],
     model: 'gpt-3.5-turbo-16k',
@@ -110,7 +110,7 @@ async function getImagePrompt(text, listTitle, style) {
   const numberOfPrompts = 1;
   const functions = [{
     name: 'make_images',
-    description: `Your role is to write a ${numberOfPrompts} prompts for a text-to-image model. Each prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}". The style of the image should be ${style}`,
+    description: `Your role is to write a ${numberOfPrompts} prompts for a text-to-image model. Each prompt should be short; 77 tokens max, which is around 300 characters; and in English. The subject of the prompt is: "${text}"; topic is: "${listTitle}". The style of the image should be ${style}. Don't include the word "infographic"`,
     "parameters": {
       "type": "object",
       "properties": {

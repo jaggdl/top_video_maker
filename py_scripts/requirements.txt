@@ -1,1 +1,6 @@
+TTS
+fairseq
+scipy
+numpy
+nltk
 requests

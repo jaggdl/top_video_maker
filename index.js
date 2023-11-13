@@ -11,12 +11,7 @@ const videoInstance = await buildVideo({
   listLength,
   formats: [
     [1920, 1080],
-    // [1080, 1920]
-  ],
-  dimensions: {
-    width: 1920,
-    height: 1080,
-  }
+  ]
 });
 
 if (shouldUpload) {

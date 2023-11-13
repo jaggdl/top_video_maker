@@ -13,16 +13,10 @@ const generateHash = (length = 8) => {
 
 const mergeAudioAndImages = async (audioPath, imagesArray, outputPath) => {
   return new Promise(async (resolve, reject) => {
-    // Create an FFmpeg command
     const command = ffmpeg();
 
-    // Set the input image
     command.input(imagesArray[0]).loop();
-
-    // Set the input audio
     command.input(audioPath);
-
-    // Set the output options
     command.outputOptions([
       '-c:v libx264',     // Codec for video
       '-c:a aac',         // Codec for audio
@@ -38,7 +32,6 @@ const mergeAudioAndImages = async (audioPath, imagesArray, outputPath) => {
       reject(`Error occurred: ${error.message}`);
     });
 
-    // Run the FFmpeg command
     command.run();
   });
 };
@@ -91,6 +84,23 @@ const mergeVideos = async (videoPaths, finalOutputPath) => {
   });
 };
 
+function mergePairVideos(input1Path, input2Path, outputPath) {
+  return new Promise((resolve, reject) => {
+    ffmpeg()
+      .input(input1Path)
+      .input(input2Path)
+      .on('end', () => {
+        console.log('Videos merged successfully.');
+        resolve();
+      })
+      .on('error', (err) => {
+        console.error('Error:', err);
+        reject(err);
+      })
+      .mergeToFile(outputPath);
+  });
+}
+
 async function mixVideoAndAudio(videoFilePath, audioFilePath) {
   return new Promise(async (resolve, reject) => {
     const outputPath = path.join(
@@ -103,7 +113,7 @@ async function mixVideoAndAudio(videoFilePath, audioFilePath) {
       .audioBitrate('320k')
       .audioChannels(2)
       .complexFilter([
-        '[0:a]volume=2.0[videoAudio]', // Raise video's audio volume by factor of 2
+        '[0:a]volume=3.0[videoAudio]', // Raise video's audio volume by factor of 2
         '[1:a]volume=0.5[audioFile]', // Keep voice-over audio volume the same (can be adjusted)
         '[videoAudio][audioFile]amix=inputs=2:duration=first[aout]' // Mix both audio streams
       ])
@@ -127,4 +137,4 @@ async function mixVideoAndAudio(videoFilePath, audioFilePath) {
   });
 }
 
-export { mergeVideos, mixVideoAndAudio, mergeAudioAndImages };
+export { mergeVideos, mixVideoAndAudio, mergeAudioAndImages, mergePairVideos };
